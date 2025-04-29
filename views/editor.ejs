@@ -13,7 +13,12 @@
       <button type="submit" class="btn btn-success">Exportar a Angular</button>
     </form>
     <button id="importImgBtn" class="btn btn-success">Importar Imagen</button>
-    <button id="importDiagClasesBtn" class="btn btn-success">Importar Diagr. Clases</button>
+   
+    <form action="/import-class/<%= salaId %>" method="POST" enctype="multipart/form-data">
+      <input type="file" name="xmiFile" accept=".xml" required>
+      <br>
+      <button id="importDiagClasesBtn" class="btn btn-success" type="submit">📥 Importar y Analizar</button>
+    </form>
   </div>
 </div>
 
