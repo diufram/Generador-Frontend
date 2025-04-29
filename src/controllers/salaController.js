@@ -2,6 +2,13 @@ const Sala = require("../models/salaModel");
 const path = require("path");
 const fs = require("fs-extra");
 const archiver = require("archiver");
+require("dotenv").config(); // Asegúrate de cargar las variables de entorno
+
+const { OpenAI } = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const indexSala = async (req, res) => {
   try {
@@ -81,6 +88,68 @@ const deleteSala = async (req, res) => {
   }
 };
 
+const importImg = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No se envió ninguna imagen." });
+    }
+
+    const prompt = `
+      Analiza esta imagen y genera el código HTML y CSS correspondiente. Devuélvelo como un JSON con el siguiente formato:
+      {
+        "html": "<aquí el html>",
+        "css": "<aquí el css>"
+      }
+    `;
+
+    const mimeType = req.file.mimetype;
+    const imageBase64 = req.file.buffer.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: dataUrl } }
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.3,
+    });
+
+    let result = completion.choices[0].message.content || '';
+
+    // Limpia si empieza con markdown ```json
+    if (result.startsWith('```json')) {
+      result = result.replace(/^```json/, "").replace(/```$/, "").trim();
+    }
+
+    // 💥 Nueva validación: asegurar que empieza con "{" para intentar parsear
+    if (!result.trim().startsWith('{')) {
+      console.error("La respuesta de OpenAI no es JSON válido:", result);
+      return res.status(500).json({ error: "OpenAI no devolvió un JSON válido." });
+    }
+
+    // Ahora sí parseamos
+    const aiDesign = JSON.parse(result);
+
+    res.render('editor', {
+      title: "Generador Frontend",
+      salaId: req.params.id,
+      aiDesign: JSON.stringify(aiDesign),
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al procesar la imagen con OpenAI." });
+  }
+};
+
+
 const { DOMParser } = require("xmldom");
 const xpath = require("xpath");
 
@@ -152,11 +221,11 @@ const importXmi = async (req, res) => {
     });
 
     //console.log("📦 Clases:", JSON.stringify(classes, null, 2));
-   // console.log("🔗 Relaciones:", JSON.stringify(associations, null, 2));
-   const { id } = req.params;
-   const diagrama = await Sala.getDiagrama(id);
-    const nuevoDiagrama = generarPaginasDesdeClases(diagrama,classes);
-    await Sala.saveDiagrama(id,nuevoDiagrama)
+    // console.log("🔗 Relaciones:", JSON.stringify(associations, null, 2));
+    const { id } = req.params;
+    const diagrama = await Sala.getDiagrama(id);
+    const nuevoDiagrama = generarPaginasDesdeClases(diagrama, classes);
+    await Sala.saveDiagrama(id, nuevoDiagrama);
     console.log("🔗 FORMULARIOS :", JSON.stringify(nuevoDiagrama, null, 2));
     // Puedes usar esto en tu vista EJS si lo deseas
     // res.render('resultado', { classes, associations });
@@ -442,4 +511,5 @@ module.exports = {
   deleteSala,
   exportarSoloPages,
   importXmi,
+  importImg,
 };

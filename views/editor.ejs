@@ -12,16 +12,27 @@
     <form action="/export-angular/<%= salaId %>" method="GET" style="margin: 0;">
       <button type="submit" class="btn btn-success">Exportar a Angular</button>
     </form>
-    <button id="importImgBtn" class="btn btn-success">Importar Imagen</button>
-   
+
+    <form action="/import-img/<%= salaId %>" method="POST" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required>
+      <br>
+      <button id="importImgBtn" class="btn btn-success" type="submit">Importar Imagen</button>
+    </form>
+
     <form action="/import-class/<%= salaId %>" method="POST" enctype="multipart/form-data">
       <input type="file" name="xmiFile" accept=".xml" required>
       <br>
-      <button id="importDiagClasesBtn" class="btn btn-success" type="submit">📥 Importar y Analizar</button>
+      <button id="importDiagClasesBtn" class="btn btn-success" type="submit">Importar Diag. Clases</button>
     </form>
   </div>
 </div>
+<% if (aiDesign) { %>
+  <button id="loadAiDesignBtn" class="btn btn-success" type="button">🪄 Cargar Diseño AI</button>
+<% } %>
 
+<script>
+  window.aiDesign = <%- aiDesign ? aiDesign : 'null' %>;
+</script>
 
 <input type="hidden" id="salaId" value="<%= salaId %>">
 <div id="gjs"></div>

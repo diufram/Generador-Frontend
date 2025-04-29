@@ -121,42 +121,72 @@ document.addEventListener("DOMContentLoaded", function () {
   editor.on("component:add", enviarProyecto);
   editor.on("component:remove", enviarProyecto);
 
-
-
-
-
   const deletePageBtn = document.getElementById("deletePageBtn");
 
-deletePageBtn.addEventListener("click", () => {
-  const selectedPageId = pageSelector.value; // ID de la página seleccionada
+  deletePageBtn.addEventListener("click", () => {
+    const selectedPageId = pageSelector.value; // ID de la página seleccionada
 
-  if (!selectedPageId) {
-    alert("Primero selecciona una página para eliminar.");
-    return;
-  }
-
-  const confirmDelete = confirm(`¿Seguro que quieres eliminar la página "${selectedPageId}"?`);
-  if (!confirmDelete) return;
-
-  const pageToDelete = pageManager.get(selectedPageId);
-
-  if (pageToDelete) {
-    pageManager.remove(pageToDelete); // Eliminar del editor
-    actualizarSelector(); // Actualizar selector de páginas
-
-    // Selecciona automáticamente otra página si existe
-    const remainingPages = pageManager.getAll();
-    if (remainingPages.length > 0) {
-      pageManager.select(remainingPages[0].id);
-    } else {
-      console.log("No hay más páginas disponibles.");
+    if (!selectedPageId) {
+      alert("Primero selecciona una página para eliminar.");
+      return;
     }
 
-    // 🔥 Enviar cambios al servidor si quieres colaboración en tiempo real
-    enviarProyecto();
-  } else {
-    alert("No se encontró la página seleccionada.");
-  }
-});
+    const confirmDelete = confirm(
+      `¿Seguro que quieres eliminar la página "${selectedPageId}"?`
+    );
+    if (!confirmDelete) return;
 
+    const pageToDelete = pageManager.get(selectedPageId);
+
+    if (pageToDelete) {
+      pageManager.remove(pageToDelete); // Eliminar del editor
+      actualizarSelector(); // Actualizar selector de páginas
+
+      // Selecciona automáticamente otra página si existe
+      const remainingPages = pageManager.getAll();
+      if (remainingPages.length > 0) {
+        pageManager.select(remainingPages[0].id);
+      } else {
+        console.log("No hay más páginas disponibles.");
+      }
+
+      // 🔥 Enviar cambios al servidor si quieres colaboración en tiempo real
+      enviarProyecto();
+    } else {
+      alert("No se encontró la página seleccionada.");
+    }
+  });
+
+  const aiDesign = window.aiDesign || null;
+
+  if (aiDesign) {
+    const loadAiDesignBtn = document.getElementById("loadAiDesignBtn");
+
+    loadAiDesignBtn.addEventListener("click", async () => {
+      if (!aiDesign) {
+        alert("No hay diseño AI para cargar");
+        return;
+      }
+
+      const html = aiDesign.html;
+      const css = aiDesign.css;
+
+      const newPage = pageManager.add({
+        name: `DiseñoAI${Date.now()}`,
+      });
+
+      pageManager.select(newPage.id);
+
+      editor.DomComponents.clear();
+      editor.Css.clear();
+
+      editor.setComponents(html);
+      editor.setStyle(css);
+
+      actualizarSelector();
+      enviarProyecto();
+
+      console.log("✅ Diseño AI cargado exitosamente");
+    });
+  }
 });

@@ -48,6 +48,7 @@ const diagramaCompartido = async (req, res) => {
     const { id } = req.params;
     res.render("editor", {
       title: "Generador Frontend",
+      aiDesign: null,
       salaId: id,
     });
   } catch (error) {
