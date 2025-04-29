@@ -46,8 +46,8 @@ const deleteSalaCompartida = async (req, res) => {
 const diagramaCompartido = async (req, res) => {
   try {
     const { id } = req.params;
-    res.render("diagram", {
-      title: "Diagramador",
+    res.render("editor", {
+      title: "Generador Frontend",
       salaId: id,
     });
   } catch (error) {
