@@ -1,0 +1,96 @@
+<!-- Page title + Filters -->
+<div class="d-lg-flex align-items-center justify-content-between py-4 mt-lg-2">
+  <h1 class="me-3">Pizarra Compartida</h1>
+</div>
+
+<div id="gjs"></div>
+<div id="page-controls" style="position: absolute; top: 10px; left: 10px; z-index: 9999;">
+  <button id="addPageBtn">➕ Nueva Página</button>
+  <select id="pageSelector"></select>
+</div>
+<script>
+// JavaScript
+document.addEventListener('DOMContentLoaded', function () {
+  const editor = grapesjs.init({
+    container: '#gjs',
+    height: '100vh',
+    width: 'auto',
+    fromElement: false,
+    storageManager: false,
+    plugins: [
+      'gjs-preset-webpage',
+      'grapesjs-navbar',
+      'grapesjs-plugin-export',
+      'grapesjs-custom-code',
+      'grapesjs-blocks-basic'
+    ],
+    pageManager: {
+      pages: [
+        {
+          id: 'home',
+          component: '<h1>Inicio</h1><p>Bienvenido a mi página de inicio.</p>',
+          styles: '',
+        },
+      ],
+    }
+  });
+
+  const pageManager = editor.Pages;
+  const addPageBtn = document.getElementById('addPageBtn');
+  const pageSelector = document.getElementById('pageSelector');
+
+  // Función para actualizar el selector de páginas
+  function actualizarSelector() {
+    pageSelector.innerHTML = '';
+    pageManager.getAll().forEach(page => {
+      const option = document.createElement('option');
+      option.value = page.id;
+      option.text = page.get('name') || page.id; // Si no tiene nombre, muestra el id
+      pageSelector.appendChild(option);
+    });
+  }
+
+  // Evento para crear una nueva página
+  addPageBtn.addEventListener('click', () => {
+    const pageName = prompt('Nombre de la nueva página:');
+    if (pageName) {
+      const newPage = pageManager.add({
+        name: pageName,
+        component: '<h1>Nueva Página</h1><p>Contenido inicial.</p>',
+      });
+      pageManager.select(newPage.id);
+      actualizarSelector();
+    }
+  });
+
+  // Evento para cambiar de página
+  pageSelector.addEventListener('change', (e) => {
+    const selectedPageId = e.target.value;
+    pageManager.select(selectedPageId);
+  });
+
+  // Inicializa el selector al principio
+  actualizarSelector();
+
+  // Escuchar si se agrega o elimina una página
+  editor.on('page:add', actualizarSelector);
+  editor.on('page:remove', actualizarSelector);
+});
+</script>
+
+<!-- Librerías necesarias -->
+<!-- Estilos de GrapesJS -->
+<link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+<!-- GrapesJS Core -->
+<script src="https://unpkg.com/grapesjs"></script>
+
+<!-- Plugins -->
+<script src="https://unpkg.com/grapesjs-preset-webpage"></script>
+<script src="https://unpkg.com/grapesjs-navbar"></script>
+<script src="https://unpkg.com/grapesjs-plugin-export"></script>
+<script src="https://unpkg.com/grapesjs-custom-code"></script>
+<script src="https://unpkg.com/grapesjs-blocks-basic"></script>
+<script src="/socket.io/socket.io.js"></script> <!-- Socket.IO -->
+<script src="/script.js"></script> <!-- Archivo JS externo -->

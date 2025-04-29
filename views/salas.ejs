@@ -1,0 +1,131 @@
+<!-- Page title + Filters -->
+
+<nav class="pt-4 mt-lg-3" aria-label="breadcrumb">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item">
+      <a href="landing-online-courses.html"><i class="bx bx-home-alt fs-lg me-1"></i></a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"></li>
+  </ol>
+</nav>
+
+<div class="d-lg-flex align-items-center justify-content-between py-4 mt-lg-2">
+  <h1 class="me-3">Mis Salas</h1>
+  <div class="d-md-flex mb-3">
+    <div class="position-relative" style="min-width: 300px;">
+      <form class="d-flex">
+        <a href="store-Sala" class="btn btn-primary w-100" rel="noopener">
+          <i class="bx bx-plus-circle fs-4 lh-1 me-1"></i>
+          &nbsp;Crear Sala
+        </a>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Courses grid -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 gx-3 gx-md-4 mt-n2 mt-sm-0">
+
+  <% if (typeof salas !=='undefined' && salas.length> 0) { %>
+    <% salas.forEach(function(sala) { %>
+      <!-- Item -->
+      <div class="col pb-1 pb-lg-3 mb-4">
+        <article class="card h-100 border-0 shadow-sm">
+          <div class="position-relative">
+            <img src="assets/img/portfolio/courses/09.jpg" class="card-img-top" alt="Image">
+          </div>
+          <div class="card-body pb-3">
+            <h3 class="h5 mb-2">
+              <a href="/diagrama-compartido/<%= sala.id %>">
+                <%= sala.title %>
+              </a>
+            </h3>
+            <p class="fs-sm mb-2">
+              <%= sala.description %>
+            </p>
+
+          </div>
+          
+          <div class="card-footer d-flex justify-content-between align-items-center fs-sm text-muted py-4">
+            <!-- Iconos de acciones -->
+            <div class="d-flex align-items-center">
+               <!-- Editar -->
+               <a href="/edit-sala/<%= sala.id %>" class="text-decoration-none text-warning d-flex align-items-center mx-3">
+                  <i class="bx bx-edit fs-5"></i>
+                  Editar
+               </a>
+            </div>
+            <div class="d-flex align-items-center">
+               <!-- Eliminar -->
+               <a href="/delete-sala/<%= sala.id %>" class="text-decoration-none text-danger d-flex align-items-center mx-3"
+                  onclick="event.stopPropagation();">
+                  <i class="bx bx-trash fs-5"></i>
+                  Eliminar
+               </a>
+            </div>
+            <div class="d-flex align-items-center">
+               <!-- Compartir -->
+               <a href="#" id="copyLink<%= sala.id %>" onclick="copyText('<%= sala.id %>')" class="text-decoration-none text-success d-flex align-items-center mx-3">
+                <i class="bx bx-share-alt fs-5"></i> Compartir
+              </a>
+            </div>
+         </div>
+         
+         
+         <p id="textToCopy<%= sala.id %>" style="display: none;">
+          <%= baseUrl + "/compartir/" + sala.id %>
+        </p>
+
+        </article>
+
+      </div>
+      <% }); %>
+        <% } else { %>
+          <p>No hay salas creadas aun.</p>
+          <% } %>
+            <!-- Modal de confirmación -->
+            <div class="modal fade" id="copyModal" tabindex="-1" aria-labelledby="copyModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="copyModalLabel">Texto Copiado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    ¡El texto ha sido copiado al portapapeles!
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+</div>
+
+
+<!-- Script para copiar el texto y mostrar el modal -->
+<script>
+  function copyText(id) {
+    // Obtener el texto que quieres copiar
+    var textToCopy = document.getElementById("textToCopy" + id).textContent;
+    console.log(textToCopy)
+    // Crear un elemento temporal para copiar el texto
+    var tempInput = document.createElement("textarea");
+    tempInput.value = textToCopy;
+    document.body.appendChild(tempInput);
+
+    // Seleccionar el texto y copiar al portapapeles
+    tempInput.select();
+    document.execCommand("copy");
+
+    // Eliminar el elemento temporal
+    document.body.removeChild(tempInput);
+
+    // Mostrar el modal de confirmación
+    var copyModal = new bootstrap.Modal(document.getElementById("copyModal"));
+    copyModal.show();
+  }
+</script>

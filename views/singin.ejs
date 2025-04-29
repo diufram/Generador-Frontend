@@ -1,0 +1,99 @@
+<!-- Google Tag Manager (noscript)-->
+<noscript>
+  <iframe src="http://www.googletagmanager.com/ns.html?id=GTM-WKV3GT5" height="0" width="0"
+    style="display: none; visibility: hidden;"></iframe>
+</noscript>
+
+<!-- Page loading spinner -->
+<div class="page-loading active">
+  <div class="page-loading-inner">
+    <div class="page-spinner"></div><span>Loading...</span>
+  </div>
+</div>
+
+<!-- Modal de Error de Inicio de Sesión -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="errorModalLabel">Error de Inicio de Sesión</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><%= message %></p> <!-- Mostrar el mensaje de error -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page wrapper for sticky footer -->
+<main class="page-wrapper">
+
+  <!-- Page content -->
+  <section class="position-relative h-100 pt-5 pb-4">
+
+    <!-- Sign in form -->
+    <div class="container d-flex flex-wrap justify-content-center justify-content-xl-start h-100 pt-5">
+      <div class="w-100 align-self-end pt-1 pt-md-4 pb-4" style="max-width: 526px;">
+        <h1 class="text-center text-xl-start">Bienvenido de Nuevo</h1>
+        <p class="text-center text-xl-start pb-3 mb-3">Aun no tienes una cuenta? <a href="/index-singup">Registrate Ahora.</a></p>
+        <form action="/singin" method="POST" class="needs-validation mb-2" novalidate>
+          <div class="position-relative mb-4">
+            <label for="email" class="form-label fs-base">Correo</label>
+            <input type="email" id="email" name="email" class="form-control form-control-lg" required>
+            <div class="invalid-feedback position-absolute start-0 top-100">Por favor, ingresa tu correo!</div>
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label fs-base">Contraseña</label>
+            <div class="password-toggle">
+              <input type="password" id="password" name="password" class="form-control form-control-lg" required>
+              <label class="password-toggle-btn" aria-label="Show/hide password">
+                <input class="password-toggle-check" type="checkbox">
+                <span class="password-toggle-indicator"></span>
+              </label>
+              <div class="invalid-feedback position-absolute start-0 top-100">Por favor, ingresa tu contraseña!</div>
+            </div>
+          </div>
+          <div class="mb-4"></div>
+          <button type="submit" class="btn btn-primary shadow-primary btn-lg w-100">Iniciar Sesión</button>
+        </form>
+
+        <hr class="my-4">
+      </div>
+      <div class="w-100 align-self-end">
+        <p class="nav d-block fs-xs text-center text-xl-start pb-2 mb-0">
+          &copy; All rights reserved. Made by
+          <a class="nav-link d-inline-block p-0" href="https://createx.studio/" target="_blank" rel="noopener">Createx Studio</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="position-absolute top-0 end-0 w-50 h-100 bg-position-center bg-repeat-0 bg-size-cover d-none d-xl-block"
+      style="background-image: url(assets/img/account/signin-bg.jpg);"></div>
+  </section>
+</main>
+
+<!-- Back to top button -->
+<a href="#top" class="btn-scroll-top" data-scroll>
+  <span class="btn-scroll-top-tooltip text-muted fs-sm me-2">Top</span>
+  <i class="btn-scroll-top-icon bx bx-chevron-up"></i>
+</a>
+
+<!-- Vendor Scripts -->
+<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/vendor/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script>
+
+<!-- Main Theme Script -->
+<script src="assets/js/theme.min.js"></script>
+
+<!-- Mostrar el modal si hay un error -->
+<% if (showErrorModal) { %>
+<script>
+  var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+  errorModal.show();
+</script>
+<% } %>

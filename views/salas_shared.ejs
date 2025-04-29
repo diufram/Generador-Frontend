@@ -1,0 +1,57 @@
+<!-- Breadcrumb -->
+<nav class="pt-4 mt-lg-3" aria-label="breadcrumb">
+
+</nav>
+
+
+<!-- Page title + Filters -->
+<div class="d-lg-flex align-items-center justify-content-between py-4 mt-lg-2">
+  <h1 class="me-3">Salas Compartidas</h1>
+</div>
+
+
+
+<!-- Courses grid -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 gx-3 gx-md-4 mt-n2 mt-sm-0">
+
+  <% if (typeof salas !=='undefined' && salas.length> 0) { %>
+    <% salas.forEach(function(sala) { %>
+      <!-- Item -->
+      <div class="col pb-1 pb-lg-3 mb-4 d-sm-none d-lg-block">
+        <article class="card h-100 border-0 shadow-sm">
+          <div class="position-relative">
+
+            <img src="assets/img/portfolio/courses/09.jpg" class="card-img-top" alt="Image">
+          </div>
+          <div class="card-body pb-3">
+            <h3 class="h5 mb-2">
+              <a href="/diagrama-compartido/<%= sala.id %>">
+                <%= sala.title %>
+              </a>
+            </h3>
+            <p class="fs-sm mb-2">
+              <%= sala.description %>
+            </p>
+            <p class="fs-lg fw-semibold text-primary mb-0">De <%= sala.creador %></p>
+          </div>
+          <div class="card-footer d-flex align-items-center fs-sm text-muted py-4">
+            <!-- Iconos de acciones -->
+            <div class="ms-auto d-flex justify-content-end">
+ 
+
+              <!-- Eliminar -->
+              <a href="/delete-sala-compartida/<%= sala.id %>"" class="text-decoration-none text-danger d-flex align-items-center mx-2">
+                <i class="bx bx-trash fs-5"></i>
+                <span class="ms-1">Eliminar</span>
+              </a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+      <% }); %>
+        <% } else { %>
+          <p>No hay salas compartidas disponibles en este momento.</p>
+          <% } %>
+
+</div>
