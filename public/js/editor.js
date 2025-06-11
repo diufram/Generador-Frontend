@@ -3,21 +3,35 @@ const salaId = document.getElementById("salaId").value; // Si lo estás pasando 
 
 document.addEventListener("DOMContentLoaded", function () {
   const socket = io();
-  const editor = grapesjs.init({
-    container: "#gjs",
-    height: "100vh",
-    width: "auto",
-    fromElement: false,
-    storageManager: false,
-    plugins: [
-      "grapesjs-navbar",
-      "grapesjs-plugin-export",
-      "grapesjs-custom-code",
-    ],
-    pageManager: {
-      pages: [],
-    },
-  });
+const editor = grapesjs.init({
+  container: "#gjs",
+  height: "100vh",
+  width: "auto",
+  fromElement: false,
+  storageManager: false,
+  pageManager: {
+    pages: [],
+  },
+  deviceManager: {
+    devices: [
+      {
+        name: 'Desktop',
+        width: '', // tamaño por defecto (100%)
+      },
+      {
+        name: 'Mobile',
+        width: '320px',
+        widthMedia: '480px',
+      }
+    ]
+  },
+});
+
+// Activar modo móvil al cargar
+editor.on('load', () => {
+  editor.setDevice('Mobile');
+});
+
 
   // --- 1. Primero recibir el proyecto inicial ---
   socket.on("init", (proyectoInicial) => {
@@ -189,4 +203,5 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("✅ Diseño AI cargado exitosamente");
     });
   }
+
 });

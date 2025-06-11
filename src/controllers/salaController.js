@@ -88,6 +88,88 @@ const deleteSala = async (req, res) => {
   }
 };
 
+const exportFlutter = async (req, res) => {
+  console.log("ENTRO");
+  if (!req.file) {
+    return res.status(400).json({ error: "No se envió ninguna imagen." });
+  }
+  const prompt = `
+La imagen enviada representa una interfaz UI de Flutter.
+
+Analízala y genera el código Dart equivalente en la version 3 en adelante. Devuelve SOLO un objeto JSON en formato plano, sin usar markdown ni bloque de código (\`\`\`).
+
+Formato:
+{
+  "widget": "<código dart aquí>"
+}
+`;
+
+  const mimeType = req.file.mimetype;
+  const imageBase64 = req.file.buffer.toString("base64");
+  const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ],
+      },
+    ],
+    max_tokens: 2000,
+    temperature: 0.3,
+  });
+
+  let result = completion.choices[0].message.content || "";
+
+  const json = JSON.parse(result);
+  console.log("🎯 Código Dart generado:\n", json.widget);
+  const dartCode = `
+                import 'package:flutter/material.dart';
+
+                class Example extends StatelessWidget {
+                  const Example({super.key});
+
+                  @override
+                  Widget build(BuildContext context) {
+                    return ${json.widget};
+                  }
+                }
+                `;
+  const outputPath = path.join(__dirname, "../../exports/flutter_widget.dart");
+fs.writeFile(outputPath, dartCode, (err) => {
+  if (err) {
+    console.error("❌ Error exacto al guardar el archivo:", err);
+    return res.status(500).send("Error al guardar archivo");
+  }
+
+  console.log("✅ Archivo Dart generado");
+
+  // Enviar archivo al cliente
+  res.download(outputPath, "example.dart", (err) => {
+    if (err) {
+      console.error("❌ Error al enviar archivo:", err);
+    } else {
+      console.log("📦 Archivo enviado correctamente");
+
+      // Eliminar archivo después de enviarlo
+      fs.unlink(outputPath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error("🧨 Error al eliminar el archivo:", unlinkErr);
+        } else {
+          console.log("🗑️ Archivo eliminado del servidor");
+        }
+      });
+    }
+  });
+});
+
+
+};
+
 const importImg = async (req, res) => {
   try {
     if (!req.file) {
@@ -113,394 +195,45 @@ const importImg = async (req, res) => {
           role: "user",
           content: [
             { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: dataUrl } }
-          ]
-        }
+            { type: "image_url", image_url: { url: dataUrl } },
+          ],
+        },
       ],
       max_tokens: 2000,
       temperature: 0.3,
     });
 
-    let result = completion.choices[0].message.content || '';
+    let result = completion.choices[0].message.content || "";
 
     // Limpia si empieza con markdown ```json
-    if (result.startsWith('```json')) {
-      result = result.replace(/^```json/, "").replace(/```$/, "").trim();
+    if (result.startsWith("```json")) {
+      result = result
+        .replace(/^```json/, "")
+        .replace(/```$/, "")
+        .trim();
     }
 
     // 💥 Nueva validación: asegurar que empieza con "{" para intentar parsear
-    if (!result.trim().startsWith('{')) {
+    if (!result.trim().startsWith("{")) {
       console.error("La respuesta de OpenAI no es JSON válido:", result);
-      return res.status(500).json({ error: "OpenAI no devolvió un JSON válido." });
+      return res
+        .status(500)
+        .json({ error: "OpenAI no devolvió un JSON válido." });
     }
 
     // Ahora sí parseamos
     const aiDesign = JSON.parse(result);
 
-    res.render('editor', {
+    res.render("editor", {
       title: "Generador Frontend",
       salaId: req.params.id,
       aiDesign: JSON.stringify(aiDesign),
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al procesar la imagen con OpenAI." });
   }
 };
-
-
-const { DOMParser } = require("xmldom");
-const xpath = require("xpath");
-
-const importXmi = async (req, res) => {
-  console.log("✅ Entró a importXmi");
-
-  if (!req.file) {
-    return res.status(400).send("❌ No se subió ningún archivo.");
-  }
-
-  try {
-    const fileBuffer = req.file.buffer;
-    const content = fileBuffer.toString("latin1");
-
-    const doc = new DOMParser().parseFromString(content, "text/xml");
-    const select = xpath.useNamespaces({ UML: "omg.org/UML1.3" });
-
-    const classes = [];
-    const associations = [];
-
-    // Extraer clases
-    const classNodes = select("//UML:Class", doc);
-    classNodes.forEach((node) => {
-      const name = node.getAttribute("name");
-      if (name === "EARootClass") return;
-      const attrNodes = select("UML:Classifier.feature/UML:Attribute", node);
-      const attributes = [];
-
-      attrNodes.forEach((attr) => {
-        const attrName = attr.getAttribute("name");
-        const tagged = select(
-          "UML:ModelElement.taggedValue/UML:TaggedValue",
-          attr
-        );
-        const typeTag = tagged.find((t) => t.getAttribute("tag") === "type");
-        const type = typeTag?.getAttribute("value") || "desconocido";
-        attributes.push({ name: attrName, type });
-      });
-
-      classes.push({ name, attributes });
-    });
-
-    // Extraer relaciones
-    const relationNodes = select(
-      "//UML:Association | //UML:Generalization",
-      doc
-    );
-    relationNodes.forEach((rel) => {
-      const type = rel.nodeName.replace("UML:", "");
-      const tagged = select(
-        "UML:ModelElement.taggedValue/UML:TaggedValue",
-        rel
-      );
-
-      const from = tagged
-        .find((t) => t.getAttribute("tag") === "ea_sourceName")
-        ?.getAttribute("value");
-      const to = tagged
-        .find((t) => t.getAttribute("tag") === "ea_targetName")
-        ?.getAttribute("value");
-      if (from && to) {
-        associations.push({
-          name: `${from}_to_${to}`,
-          type,
-          from,
-          to,
-        });
-      }
-    });
-
-    //console.log("📦 Clases:", JSON.stringify(classes, null, 2));
-    // console.log("🔗 Relaciones:", JSON.stringify(associations, null, 2));
-    const { id } = req.params;
-    const diagrama = await Sala.getDiagrama(id);
-    const nuevoDiagrama = generarPaginasDesdeClases(diagrama, classes);
-    await Sala.saveDiagrama(id, nuevoDiagrama);
-    console.log("🔗 FORMULARIOS :", JSON.stringify(nuevoDiagrama, null, 2));
-    // Puedes usar esto en tu vista EJS si lo deseas
-    // res.render('resultado', { classes, associations });
-    //res.json({ classes, associations });
-  } catch (e) {
-    console.error("❌ Error inesperado:", e);
-    res.status(500).send("Error inesperado en importación.");
-  }
-};
-
-function generarPaginasDesdeClases(diagrama, clases) {
-  const nuevasPaginas = clases.map((clase, i) => {
-    const formId = `form_${clase.name}_${i}`;
-    const formFields = clase.attributes.map((attr, j) => {
-      const inputId = `input_${clase.name}_${attr.name}_${j}`;
-
-      return {
-        tagName: "div",
-        attributes: {
-          class: "form-group",
-          style: `
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-          `,
-        },
-        components: [
-          {
-            tagName: "label",
-            attributes: {
-              for: inputId,
-              style: `
-                font-weight: bold;
-                margin-bottom: 6px;
-                color: #444;
-              `,
-            },
-            components: [{ type: "textnode", content: attr.name }],
-          },
-          {
-            tagName: "input",
-            void: true,
-            attributes: {
-              id: inputId,
-              type: "text",
-              placeholder: `Ingrese ${attr.name}`,
-              name: attr.name,
-              style: `
-                padding: 12px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                font-size: 15px;
-                transition: border-color 0.2s ease-in-out;
-              `,
-            },
-          },
-        ],
-      };
-    });
-
-    const form = {
-      tagName: "form",
-      attributes: {
-        id: formId,
-        style: `
-          max-width: 700px;
-          margin: 40px auto;
-          padding: 35px 40px;
-          border-radius: 10px;
-          background: white;
-          box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
-          font-family: 'Segoe UI', sans-serif;
-        `,
-      },
-      components: [
-        {
-          type: "text",
-          tagName: "h2",
-          attributes: {
-            style: `
-              margin-bottom: 25px;
-              font-size: 28px;
-              color: #2c3e50;
-              text-align: center;
-            `,
-          },
-          components: [
-            {
-              type: "textnode",
-              content: `Formulario ${clase.name}`,
-            },
-          ],
-        },
-        ...formFields,
-        {
-          tagName: "div",
-          attributes: {
-            style: "text-align: center; margin-top: 30px;",
-          },
-          components: [
-            {
-              tagName: "button",
-              type: "text",
-              attributes: {
-                type: "submit",
-                id: `submit_${clase.name}`,
-                style: `
-                  background: #007bff;
-                  color: white;
-                  padding: 12px 25px;
-                  border: none;
-                  border-radius: 5px;
-                  font-size: 16px;
-                  cursor: pointer;
-                  transition: background 0.3s;
-                `,
-                onmouseover: "this.style.background='#0056b3'",
-                onmouseout: "this.style.background='#007bff'",
-              },
-              components: [
-                {
-                  type: "textnode",
-                  content: `Guardar ${clase.name}`,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    return {
-      name: clase.name.toLowerCase(),
-      id: `page-${clase.name.toLowerCase()}`,
-      frames: [
-        {
-          id: `frame-${clase.name.toLowerCase()}`,
-          component: {
-            type: "wrapper",
-            components: [form],
-          },
-        },
-      ],
-    };
-  });
-
-  diagrama.pages.push(...nuevasPaginas);
-  return diagrama;
-}
-
-const exportarSoloPages = async (req, res) => {
-  const { id } = req.params;
-  const sala = await Sala.getSala(id);
-  const proyecto = sala[0].diagram;
-
-  // Configura la respuesta HTTP
-  res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", "attachment; filename=pages.zip");
-
-  const archive = archiver("zip", { zlib: { level: 9 } });
-  archive.pipe(res); // 📦 Pipeamos directo a la respuesta HTTP
-
-  // Generar en memoria todas las carpetas y archivos
-  for (const page of proyecto.pages) {
-    const pageName = sanitizePageName(page.name || "pagina");
-
-    // HTML
-    const htmlContent = generateHtmlFromPage(page);
-    archive.append(htmlContent, {
-      name: `${pageName}/${pageName}.component.html`,
-    });
-
-    // CSS
-    const cssContent = generateCssFromStyles(proyecto.styles);
-    archive.append(cssContent, {
-      name: `${pageName}/${pageName}.component.css`,
-    });
-
-    // TS
-    const tsContent = generateTsComponent(pageName);
-    archive.append(tsContent, { name: `${pageName}/${pageName}.component.ts` });
-  }
-
-  await archive.finalize(); // Finalizar archivo zip
-};
-
-// --- Las demás funciones no cambian ---
-function sanitizePageName(name) {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w-]+/g, "");
-}
-
-function generateHtmlFromPage(page) {
-  if (page.frames && page.frames.length > 0) {
-    const frame = page.frames[0];
-    return frame.component
-      ? buildHtml(frame.component.components || [])
-      : "<div>Sin contenido</div>";
-  }
-  return "<div>Sin contenido</div>";
-}
-
-function buildHtml(components) {
-  const voidElements = [
-    "area",
-    "base",
-    "br",
-    "col",
-    "embed",
-    "hr",
-    "img",
-    "input",
-    "link",
-    "meta",
-    "source",
-    "track",
-    "wbr",
-  ];
-
-  let html = "";
-  components.forEach((comp) => {
-    const tag = comp.tagName || "div";
-    const attrs = comp.attributes
-      ? Object.entries(comp.attributes)
-          .map(([k, v]) => `${k}="${v}"`)
-          .join(" ")
-      : "";
-
-    const isTextOnly = !comp.components && comp.content;
-
-    if (isTextOnly && (tag === "div" || tag === "")) {
-      html += comp.content; // Solo mete el contenido
-    } else if (voidElements.includes(tag)) {
-      html += `<${tag}${attrs ? " " + attrs : ""}>`; // 👉 No cierre para void elements
-    } else {
-      const content = comp.components
-        ? buildHtml(comp.components)
-        : comp.content || "";
-      html += `<${tag}${attrs ? " " + attrs : ""}>${content}</${tag}>`;
-    }
-  });
-  return html;
-}
-
-function generateCssFromStyles(styles) {
-  let css = "";
-  styles.forEach((style) => {
-    css += `${style.selectors.join(", ")} {\n`;
-    for (const prop in style.style) {
-      css += `  ${prop}: ${style.style[prop]};\n`;
-    }
-    css += `}\n\n`;
-  });
-  return css;
-}
-
-function generateTsComponent(name) {
-  const className = capitalizeFirst(name) + "Component";
-  return `
-import { Component } from '@angular/core';
-
-@Component({
-  selector: 'app-${name}',
-  templateUrl: './${name}.component.html',
-  styleUrls: ['./${name}.component.css']
-})
-export class ${className} {}
-`.trim();
-}
-
-function capitalizeFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 module.exports = {
   storeSala,
@@ -509,7 +242,6 @@ module.exports = {
   indexSala,
   createSala,
   deleteSala,
-  exportarSoloPages,
-  importXmi,
   importImg,
+  exportFlutter,
 };

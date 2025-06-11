@@ -11,9 +11,8 @@ const {
   editSala,
   updateSala,
   deleteSala,
-  exportarSoloPages,
-  importXmi,
-  importImg,
+  exportFlutter,
+  importImg
 } = require("../controllers/salaController");
 const isAuthenticated = require("../middlewares/isAuthenticate");
 router.get("/index-sala", isAuthenticated, indexSala);
@@ -22,8 +21,9 @@ router.post("/create-sala", isAuthenticated, createSala);
 router.get("/edit-sala/:id", isAuthenticated, editSala);
 router.post("/update-sala", isAuthenticated, updateSala);
 router.get("/delete-sala/:id", isAuthenticated, deleteSala);
-router.get("/export-angular/:id", exportarSoloPages);
-router.post("/import-class/:id", upload.single("xmiFile"), importXmi);
+
+router.post("/export-flutter", upload.single("imageF"), exportFlutter);
+
 router.post("/import-img/:id", upload.single("image"), importImg);
 
 module.exports = router;

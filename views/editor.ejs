@@ -3,36 +3,129 @@
   <h1 class="me-3">Pizarra Compartida</h1>
 
   <div id="page-controls" style="display: flex; align-items: center; gap: 10px;">
-    <button id="addPageBtn" class="btn btn-primary">➕ Nueva Página</button>
+    <button id="addPageBtn" class="btn btn-primary">➕</button>
 
     <select id="pageSelector" class="form-select" style="width: auto;"></select>
 
-    <button id="deletePageBtn" class="btn btn-danger">🗑️ Eliminar Página</button>
+    <button id="deletePageBtn" class="btn btn-danger">🗑️</button>
 
     <form action="/export-angular/<%= salaId %>" method="GET" style="margin: 0;">
-      <button type="submit" class="btn btn-success">Exportar a Angular</button>
+      <button type="submit" class="btn btn-success">Exportar</button>
     </form>
 
-    <form action="/import-img/<%= salaId %>" method="POST" enctype="multipart/form-data">
-      <input type="file" name="image" accept="image/*" required>
-      <br>
-      <button id="importImgBtn" class="btn btn-success" type="submit">Importar Imagen</button>
-    </form>
 
-    <form action="/import-class/<%= salaId %>" method="POST" enctype="multipart/form-data">
-      <input type="file" name="xmiFile" accept=".xml" required>
-      <br>
-      <button id="importDiagClasesBtn" class="btn btn-success" type="submit">Importar Diag. Clases</button>
-    </form>
+<!-- Formulario de importar -->
+<form id="uploadForm" action="/import-img/<%= salaId %>" method="POST" enctype="multipart/form-data">
+  <div class="file-upload-wrapper">
+    <span id="file-name">Ningún archivo seleccionado</span>
+    <label for="image" class="custom-file-upload">Importar Boceto</label>
+    <input type="file" name="image" id="image" accept="image/*" required onchange="handleFile(this)">
+  </div>
+</form>
+
+<form id="imgForm" action="/export-flutter" method="POST" enctype="multipart/form-data">
+  <div class="file-upload-wrapper">
+    <label class="custom-file-upload" style="cursor:pointer;" onclick="exportAsImage()">
+      Exportar A Flutter
+    </label>
+    <input type="hidden" name="imageF" id="imageDataInput">
+  </div>
+</form>
+
+
+
+
+
   </div>
 </div>
 <% if (aiDesign) { %>
   <button id="loadAiDesignBtn" class="btn btn-success" type="button">🪄 Cargar Diseño AI</button>
 <% } %>
+<style>
+  .custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #28c76f;
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+  }
 
+  input[type="file"] {
+    display: none;
+  }
+
+  #file-name {
+    font-style: italic;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .file-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+</style>
+<script>
+  function handleFile(input) {
+    const nameSpan = document.getElementById("file-name");
+    if (input.files.length > 0) {
+      nameSpan.textContent = input.files[0].name;
+      // Enviar el formulario automáticamente
+      document.getElementById("uploadForm").submit();
+    }
+  }
+</script>
 <script>
   window.aiDesign = <%- aiDesign ? aiDesign : 'null' %>;
 </script>
+
+
+<script>
+function exportAsImage() {
+  const iframe = document.querySelector('#gjs iframe');
+  if (!iframe) {
+    alert('No se encontró el área de diseño');
+    return;
+  }
+
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+  const body = iframeDoc.body;
+
+  html2canvas(body).then(canvas => {
+    canvas.toBlob(blob => {
+      // Convertir a objeto File y usar FormData
+      const file = new File([blob], "boceto.png", { type: "image/png" });
+      const formData = new FormData();
+      formData.append("imageF", file);
+
+      // Crear un formulario virtual para enviarlo como POST y forzar descarga
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.enctype = "multipart/form-data";
+      form.action = "/export-flutter";
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.name = "imageF";
+      form.appendChild(fileInput);
+
+      // Este paso es opcional: para simular el archivo como si fuera seleccionado
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      fileInput.files = dataTransfer.files;
+
+      document.body.appendChild(form);
+      form.submit(); // fuerza el envío como formulario real
+    });
+  });
+}
+</script>
+
+
+
 
 <input type="hidden" id="salaId" value="<%= salaId %>">
 <div id="gjs"></div>
@@ -44,6 +137,7 @@
 <!-- Librerías necesarias -->
 <!-- Estilos de GrapesJS -->
 <link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css">
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 
 <!-- GrapesJS Core -->
