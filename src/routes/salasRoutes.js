@@ -12,7 +12,8 @@ const {
   updateSala,
   deleteSala,
   exportFlutter,
-  importImg
+  importImg,
+  importPromt
 } = require("../controllers/salaController");
 const isAuthenticated = require("../middlewares/isAuthenticate");
 router.get("/index-sala", isAuthenticated, indexSala);
@@ -21,6 +22,8 @@ router.post("/create-sala", isAuthenticated, createSala);
 router.get("/edit-sala/:id", isAuthenticated, editSala);
 router.post("/update-sala", isAuthenticated, updateSala);
 router.get("/delete-sala/:id", isAuthenticated, deleteSala);
+
+router.post("/import-promt/:id", importPromt);
 
 router.post("/export-flutter", upload.single("imageF"), exportFlutter);
 

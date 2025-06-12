@@ -140,34 +140,32 @@ Formato:
                 }
                 `;
   const outputPath = path.join(__dirname, "../../exports/flutter_widget.dart");
-fs.writeFile(outputPath, dartCode, (err) => {
-  if (err) {
-    console.error("❌ Error exacto al guardar el archivo:", err);
-    return res.status(500).send("Error al guardar archivo");
-  }
-
-  console.log("✅ Archivo Dart generado");
-
-  // Enviar archivo al cliente
-  res.download(outputPath, "example.dart", (err) => {
+  fs.writeFile(outputPath, dartCode, (err) => {
     if (err) {
-      console.error("❌ Error al enviar archivo:", err);
-    } else {
-      console.log("📦 Archivo enviado correctamente");
-
-      // Eliminar archivo después de enviarlo
-      fs.unlink(outputPath, (unlinkErr) => {
-        if (unlinkErr) {
-          console.error("🧨 Error al eliminar el archivo:", unlinkErr);
-        } else {
-          console.log("🗑️ Archivo eliminado del servidor");
-        }
-      });
+      console.error("❌ Error exacto al guardar el archivo:", err);
+      return res.status(500).send("Error al guardar archivo");
     }
+
+    console.log("✅ Archivo Dart generado");
+
+    // Enviar archivo al cliente
+    res.download(outputPath, "example.dart", (err) => {
+      if (err) {
+        console.error("❌ Error al enviar archivo:", err);
+      } else {
+        console.log("📦 Archivo enviado correctamente");
+
+        // Eliminar archivo después de enviarlo
+        fs.unlink(outputPath, (unlinkErr) => {
+          if (unlinkErr) {
+            console.error("🧨 Error al eliminar el archivo:", unlinkErr);
+          } else {
+            console.log("🗑️ Archivo eliminado del servidor");
+          }
+        });
+      }
+    });
   });
-});
-
-
 };
 
 const importImg = async (req, res) => {
@@ -235,6 +233,56 @@ const importImg = async (req, res) => {
   }
 };
 
+const importPromt = async (req, res) => {
+  try {
+    const { mensaje } = req.body;
+
+    const prompt = `
+Quiero que actúes como un desarrollador web experto.
+
+Te voy a describir cómo quiero que se vea mi página web.
+
+Devuélveme únicamente un objeto JSON plano con dos claves: "html" y "css", cada una conteniendo su respectivo contenido como string.
+
+No uses markdown, ni etiquetas especiales, ni bloques de código.
+
+Solo quiero el JSON plano.
+
+Usa buenas prácticas, estilo responsivo, y comenta dentro del código si lo crees necesario.
+
+Esta es la descripción de la página que quiero:
+${mensaje}
+    `;
+
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+          ],
+        },
+      ],
+      max_tokens: 2000,
+      temperature: 0.3,
+    });
+
+    let result = completion.choices[0].message.content || "";
+    const aiDesign = JSON.parse(result);
+
+    res.render("editor", {
+      title: "Generador Frontend",
+      salaId: req.params.id,
+      aiDesign: JSON.stringify(aiDesign),
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al procesar la imagen con OpenAI." });
+  }
+};
 module.exports = {
   storeSala,
   editSala,
@@ -244,4 +292,5 @@ module.exports = {
   deleteSala,
   importImg,
   exportFlutter,
+  importPromt,
 };

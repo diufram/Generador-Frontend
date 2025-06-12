@@ -7,7 +7,7 @@ const editor = grapesjs.init({
   container: "#gjs",
   height: "100vh",
   width: "auto",
-  fromElement: false,
+  fromElement: true,
   storageManager: false,
   pageManager: {
     pages: [],
@@ -203,5 +203,35 @@ editor.on('load', () => {
       console.log("✅ Diseño AI cargado exitosamente");
     });
   }
+
+
+
+
+  //const aiDesign = window.aiDesign || null;
+//PARA EDITAR EL DISEÑO DE LA PAG ACTUAL
+  if (aiDesign) {
+    const loadAiDesignBtn = document.getElementById("loadAiDesignBtn");
+
+    loadAiDesignBtn.addEventListener("click", async () => {
+      if (!aiDesign) {
+        alert("No hay diseño AI para cargar");
+        return;
+      }
+
+      const html = aiDesign.html;
+      const css = aiDesign.css;
+
+      editor.DomComponents.clear();
+      editor.Css.clear();
+
+      editor.setComponents(html);
+      editor.setStyle(css);
+
+      enviarProyecto();
+
+      console.log("✅ Diseño AI cargado exitosamente");
+    });
+  }
+
 
 });
